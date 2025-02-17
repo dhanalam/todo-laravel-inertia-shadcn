@@ -1,86 +1,101 @@
-import {router} from '@inertiajs/react'
-import {Button} from "@/Components/ui/button"
+import { router } from '@inertiajs/react';
+import { Button } from "@/Components/ui/button";
 import React from "react";
+import { ButtonLink } from '../ButtonLink';
 
-export default function Pagination({links, limit = 2}) {
+export default function Pagination({ data, limit = 2}) {
+  const { links, last_page } = data;
+  const activeLink = links.find(link => link.active);
+  const currentPage = activeLink ? parseInt(activeLink.label) : 1;
+  const totalPages = last_page;
 
+  // Create a map of page numbers to their respective link objects
+  const pageLinksMap = links.reduce((acc, link) => {
+    const pageNumber = parseInt(link.label);
+    if (!isNaN(pageNumber)) {
+      acc[pageNumber] = link;
+    }
+    return acc;
+  }, {});
 
   const generatePaginationRange = () => {
-    let pageNumbers = [];
-    const totalPages = links.length; // Total number of pages
-    const currentPageIndex = links.findIndex(link => link.active);  // Find the index of the active page
+    if (totalPages <= 1) return [];
+    const range = [];
+    range.push(1);
 
-    // Calculate the range of pages before and after the current page
-    const start = Math.max(2, currentPageIndex - limit + 1);
-    const end = Math.min(totalPages - 1, currentPageIndex + limit + 1);
+    if (totalPages === 1) return range;
 
-    // Always show the first page
-    pageNumbers.push(1);
+    let start = Math.max(2, currentPage - limit);
+    let end = Math.min(totalPages - 1, currentPage + limit);
 
-    // Show ellipsis if there are skipped pages before the current page
     if (start > 2) {
-      pageNumbers.push("...");
+      range.push('...');
     }
 
-    // Add pages before and after the active page
     for (let i = start; i <= end; i++) {
-      pageNumbers.push(i);  // Pages are 1-based
+      range.push(i);
     }
 
-    // Show ellipsis if there are skipped pages after the current page
     if (end < totalPages - 1) {
-      pageNumbers.push("...");
+      range.push('...');
     }
 
-    // Always show the last page
     if (totalPages > 1) {
-      pageNumbers.push(totalPages);
+      range.push(totalPages);
     }
 
-    return pageNumbers;
+    return range;
   };
+
+  // Don't render if only one page exists
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  function goToPage(url) { 
+    router.prefetch(url, {preserveScroll: true, preserveState: true});
+  }
 
   return (
     <div className='space-x-2'>
-      {/* Prev Button */}
-      <Button
-        variant={links[0].active ? "default" : "outline"}
+      {/* Previous Button */}
+      <ButtonLink
+        variant="outline"
         size="sm"
-        onClick={() => router.visit(links[0].url)}
+        href={links[0].url}
         disabled={!links[0].url}
       >
         {"< Prev"}
-      </Button>
+      </ButtonLink>
 
-      {/* Pagination Pages */}
+      {/* Generated Page Numbers */}
       {generatePaginationRange().map((page, index) => (
         page === "..." ? (
-          <Button key={index} variant="outline" size="sm" disabled>
-            {"..."}
-          </Button>
+          <ButtonLink key={index} variant="outline" size="sm" disabled>
+            ...
+          </ButtonLink>
         ) : (
-          <Button
+          <ButtonLink
             key={index}
-            variant={links[page - 1].active ? "default" : "outline"}
+            variant={pageLinksMap[page]?.active ? "default" : "outline"}
             size="sm"
-            onClick={() => router.visit(links[page - 1].url)}
-            disabled={!links[page - 1].url}
+            href={pageLinksMap[page]?.url}
+            disabled={!pageLinksMap[page]?.url}
           >
             {page}
-          </Button>
+          </ButtonLink>
         )
       ))}
 
-      {/* Next Button */}
-      <Button
-        variant={links[links.length - 1].active ? "default" : "outline"}
+      {/* Next ButtonLink */}
+      <ButtonLink
+        variant="outline"
         size="sm"
-        onClick={() => router.visit(links[links.length - 1].url)}
+        href={links[links.length - 1].url}
         disabled={!links[links.length - 1].url}
       >
         {"Next >"}
-      </Button>
+      </ButtonLink>
     </div>
   );
-
 }

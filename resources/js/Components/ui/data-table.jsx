@@ -6,9 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {router, usePage} from '@inertiajs/react'
@@ -18,7 +15,7 @@ import Pagination from "@/Components/Admin/Pagination.jsx";
 import {getStorage, setStorage} from "@/lib/StorageManager.js";
 
 export default function DataTable({name, rows, columns, selectable = true, selectRoute = null}) {
-
+  
   const {query, url} = usePage().props;
 
   const [visibleColumns, setVisibleColumns] = useState(columns.map(column => __has(column, 'visible') ? column : {
@@ -57,7 +54,7 @@ export default function DataTable({name, rows, columns, selectable = true, selec
     }
   }
 
-  function refreshFilters(newFilters) {
+  function refreshFilters(newFilters = {}) {
     router.visit(window.location.href, {
       method: 'get',
       data: {
@@ -92,6 +89,11 @@ export default function DataTable({name, rows, columns, selectable = true, selec
 
   function unselectAll() {
     resetSelectedIds([]);
+  }
+
+  function pageChanged(page) {
+    setFilters({...filters, page: page})
+    refreshFilters();
   }
 
   return (
@@ -203,6 +205,7 @@ export default function DataTable({name, rows, columns, selectable = true, selec
               })}
             </TableRow>
           </TableHeader>
+          
           <TableBody>
             {rows.data.length ? (
               rows.data.map((row) => (
@@ -233,11 +236,13 @@ export default function DataTable({name, rows, columns, selectable = true, selec
           </TableBody>
         </Table>
       </div>
+      
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           Showing {rows.from} to {rows.to} of {rows.total} results
         </div>
-        <Pagination links={rows.links}/>
+
+        <Pagination data={rows}/>
       </div>
     </div>
   )
